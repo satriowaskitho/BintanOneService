@@ -57,7 +57,7 @@
 
             <a href="#scan-section"
                 class="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                Akses Kiosk Layanan
+                Akses Layanan
                 <svg class="w-5 h-5 ml-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
@@ -134,7 +134,7 @@
                                 stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <span class="text-lg font-semibold tracking-wide">Menginisialisasi Sistem Cerdas...</span>
+                        <span class="text-lg font-semibold tracking-wide">Menginisialisasi Sistem ...</span>
                     </div>
                 </div>
 
@@ -159,7 +159,7 @@
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-gray-400 py-10 text-center text-sm border-t border-gray-800">
-        <p>&copy; 2026 Badan Pusat Statistik Kabupaten Bintan. Teknologi untuk Masyarakat.</p>
+        <p>&copy; Tim IT 2026 Badan Pusat Statistik Kabupaten Bintan</p>
     </footer>
 
     <!-- Logic Script -->
