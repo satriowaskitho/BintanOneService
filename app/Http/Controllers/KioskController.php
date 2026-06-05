@@ -53,6 +53,18 @@ class KioskController extends Controller
 
     public function ticket(Visitor $visitor)
     {
+        // 1. Cek apakah visitor memiliki antrean aktif (waiting/called) hari ini
+        $activeQueue = Queue::where('visitor_id', $visitor->id)
+            ->whereDate('created_at', Carbon::today())
+            ->whereIn('status', ['waiting', 'called'])
+            ->first();
+
+        // Jika ada, kembalikan ke struk tiketnya dengan pesan info
+        if ($activeQueue) {
+            return redirect()->route('kiosk.success', $activeQueue->id)
+                ->with('info', 'Anda masih memiliki antrean aktif. Tidak perlu mengambil tiket baru.');
+        }
+
         $services = ServiceType::all();
         return view('kiosk.ticket', compact('visitor', 'services'));
     }
@@ -65,9 +77,32 @@ class KioskController extends Controller
             'purpose' => 'nullable|string'
         ]);
 
-        $queue = DB::transaction(function () use ($validated) {
+        $today = Carbon::today();
+
+        // Backend Service Validations
+        // 1. Active Queue Constraint
+        $activeQueue = Queue::where('visitor_id', $validated['visitor_id'])
+            ->whereDate('created_at', $today)
+            ->whereIn('status', ['waiting', 'called'])
+            ->first();
+
+        if ($activeQueue) {
+            return redirect()->route('kiosk.success', $activeQueue->id)
+                ->with('info', 'Anda masih memiliki antrean aktif hari ini.');
+        }
+
+        // 2. Anti-Spam 1-Minute Cooldown Constraint (Based on Creation Time)
+        $recentQueue = Queue::where('visitor_id', $validated['visitor_id'])
+            ->where('created_at', '>=', now()->subMinute())
+            ->first();
+
+        if ($recentQueue) {
+            return redirect()->route('kiosk.success', $recentQueue->id)
+                ->with('info', 'Anda mengambil tiket terlalu cepat. Harap tunggu 1 menit sebelum membuat tiket lagi.');
+        }
+
+        $queue = DB::transaction(function () use ($validated, $today) {
             $service = ServiceType::find($validated['service_type_id']);
-            $today = Carbon::today();
             
             // Atomic lock for queue number generation
             $lastQueue = Queue::where('service_type_id', $service->id)

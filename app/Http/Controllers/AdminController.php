@@ -8,11 +8,12 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        $today = Carbon::today();
+        $filterDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+        
         $queues = Queue::with(['visitor', 'serviceType'])
-            ->whereDate('created_at', $today)
+            ->whereDate('created_at', $filterDate)
             ->orderBy('id', 'asc')
             ->get();
 
@@ -30,7 +31,7 @@ class AdminController extends Controller
             $counts[] = $chartRaw[$date] ?? 0;
         }
 
-        return view('admin.dashboard', compact('queues', 'dates', 'counts'));
+        return view('admin.dashboard', compact('queues', 'dates', 'counts', 'filterDate'));
     }
 
     public function callQueue(Queue $queue)

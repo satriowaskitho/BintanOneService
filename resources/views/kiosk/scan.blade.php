@@ -145,10 +145,6 @@
                         disabled>
                         🔍 Konfirmasi Scan Wajah
                     </button>
-                    <a href="{{ route('kiosk.register') }}"
-                        class="w-full sm:w-auto px-10 py-4 bg-white text-gray-700 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-lg font-bold rounded-xl transition-all">
-                        Login Manual
-                    </a>
                 </div>
 
                 <form id="redirect-form" method="GET" style="display:none;"></form>
@@ -169,8 +165,11 @@
         const scanBtn = document.getElementById('scan-btn');
         const faceGuide = document.getElementById('face-guide');
 
-        let labeledFaceDescriptors = [];
+        // Configurable Threshold
+        const FACE_MATCH_THRESHOLD = 0.45;
         const MODEL_URL = '/models';
+
+        let labeledFaceDescriptors = [];
 
         Promise.all([
             faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
@@ -180,6 +179,42 @@
             console.error(err);
             overlay.innerHTML = "<span class='text-red-400 font-bold'>Gagal memuat sistem pendeteksi.</span>";
         });
+
+        function normalizeFaceDescriptors(faceData, visitorId) {
+            if (!faceData) return null;
+            
+            let data = Object.values(faceData);
+            if (data.length === 0) return null;
+
+            let descriptors = [];
+            
+            if (Array.isArray(data[0]) || typeof data[0] === 'object') {
+                // Format baru: multi-descriptor (3 frames)
+                Object.values(faceData).forEach((arr, index) => {
+                    const floatArr = new Float32Array(Object.values(arr));
+                    if (floatArr.length === 128) {
+                        descriptors.push(floatArr);
+                    } else {
+                        console.warn(`[FaceMatcher] Visitor ID ${visitorId}: Invalid descriptor length (${floatArr.length}) at frame ${index}. Expected 128.`);
+                    }
+                });
+            } else {
+                // Format lama: single descriptor flat array
+                const floatArr = new Float32Array(data);
+                if (floatArr.length === 128) {
+                    descriptors.push(floatArr);
+                } else {
+                    console.warn(`[FaceMatcher] Visitor ID ${visitorId}: Invalid single descriptor length (${floatArr.length}). Expected 128.`);
+                }
+            }
+
+            if (descriptors.length > 0) {
+                return new faceapi.LabeledFaceDescriptors(visitorId.toString(), descriptors);
+            }
+            
+            console.warn(`[FaceMatcher] Visitor ID ${visitorId}: No valid descriptors found. Skipping.`);
+            return null;
+        }
 
         async function startVideo() {
             try {
@@ -191,19 +226,7 @@
                 const res = await fetch('{{ route('kiosk.api.visitors') }}');
                 const visitors = await res.json();
 
-                labeledFaceDescriptors = visitors.map(v => {
-                    let data = Object.values(v.face_data);
-                    let descriptors = [];
-                    if (Array.isArray(data[0]) || typeof data[0] === 'object') {
-                        // multiple descriptors
-                        descriptors = Object.values(v.face_data).map(arr => new Float32Array(Object.values(
-                            arr)));
-                    } else {
-                        // single descriptor fallback
-                        descriptors = [new Float32Array(data)];
-                    }
-                    return new faceapi.LabeledFaceDescriptors(v.id.toString(), descriptors);
-                });
+                labeledFaceDescriptors = visitors.map(v => normalizeFaceDescriptors(v.face_data, v.id)).filter(Boolean);
 
                 overlay.style.display = 'none';
                 scanBtn.disabled = false;
@@ -234,7 +257,10 @@
             }
 
             const boxWidth = detection.detection.box.width;
-            if (boxWidth < 120) {
+            const videoWidth = video.videoWidth || 640;
+            
+            // Wajah harus minimal 15% dari lebar resolusi asli kamera
+            if (boxWidth < (videoWidth * 0.15)) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Terlalu Jauh',
@@ -248,8 +274,7 @@
             faceGuide.classList.replace('border-blue-400', 'border-green-500');
 
             if (labeledFaceDescriptors.length > 0) {
-                // Sangat ketat, threshold = 0.42
-                const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.42);
+                const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, FACE_MATCH_THRESHOLD);
                 const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
 
                 if (bestMatch.label !== 'unknown') {
@@ -267,6 +292,7 @@
                 showConfirmButton: false,
                 timer: 2500
             }).then(() => {
+                sessionStorage.setItem('scanned_descriptor', JSON.stringify(Array.from(detection.descriptor)));
                 window.location.href = '{{ route('kiosk.register') }}';
             });
 

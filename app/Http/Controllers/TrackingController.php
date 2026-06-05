@@ -20,15 +20,7 @@ class TrackingController extends Controller
             ->where('status', 'waiting')
             ->count();
         
-        // Estimation logic that doesn't reset on refresh
-        // Calculate how many people were ahead of this user at the time of ticket creation
-        $totalAheadAtCreation = Queue::whereDate('created_at', $queue->created_at->toDateString())
-            ->where('id', '<', $queue->id)
-            ->count();
-            
-        $initialWaitSeconds = $totalAheadAtCreation * 5 * 60;
-        $elapsedSeconds = $queue->created_at->diffInSeconds(now());
-        $remainingSeconds = max(0, $initialWaitSeconds - $elapsedSeconds);
+        $remainingSeconds = $position * 5 * 60;
 
         return view('tracking.show', compact('queue', 'position', 'remainingSeconds'));
     }

@@ -9,7 +9,7 @@ class Visitor extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'face_data' => 'array',
+        'face_data' => 'encrypted:array',
     ];
 
     public function queues()

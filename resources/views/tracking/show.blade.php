@@ -42,18 +42,16 @@
         
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                let remainingSeconds = {{ $remainingSeconds }};
+                let remainingSeconds = parseInt({{ $remainingSeconds }}) || 0;
                 const display = document.getElementById('countdown-display');
                 
                 function updateDisplay() {
                     if (remainingSeconds <= 0) {
-                        display.innerHTML = '<span class="text-lg">Mohon tunggu sebentar</span>';
+                        display.innerHTML = '<span class="text-lg">Sedang diproses</span>';
                         return true;
                     } else {
                         const minutes = Math.floor(remainingSeconds / 60);
-                        let seconds = remainingSeconds % 60;
-                        if (seconds < 10) seconds = '0' + seconds;
-                        display.innerHTML = minutes + ':' + seconds;
+                        display.innerHTML = minutes + ' Menit';
                         return false;
                     }
                 }

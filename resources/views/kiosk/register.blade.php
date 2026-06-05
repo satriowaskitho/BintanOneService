@@ -89,6 +89,18 @@
     let capturedDescriptors = [];
     let captureCount = 0;
 
+    // Ambil descriptor frame 1 dari halaman scan
+    const scanned = sessionStorage.getItem('scanned_descriptor');
+    if (scanned) {
+        capturedDescriptors.push(JSON.parse(scanned));
+        captureCount = 1;
+        
+        // Update UI untuk frame 1
+        progressBar.style.width = "33.33%";
+        captureBtn.innerText = "📸 Tangkap Wajah 2 (Senyum Sedikit)";
+        instruct.innerText = "Berikan ekspresi senyum sedikit tahan kepala statis.";
+    }
+
     Promise.all([
         faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -127,7 +139,8 @@
             return;
         }
 
-        if (detection.detection.box.width < 100) {
+        const videoWidth = videoReg.videoWidth || 640;
+        if (detection.detection.box.width < (videoWidth * 0.15)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Terlalu Jauh',
