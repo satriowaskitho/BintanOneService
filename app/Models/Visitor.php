@@ -16,4 +16,9 @@ class Visitor extends Model
     {
         return $this->hasMany(Queue::class);
     }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
 }

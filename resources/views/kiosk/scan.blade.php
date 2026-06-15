@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>One Service</title>
+    <title>Bintan One Service</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('Logo Bintan One Service.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -145,6 +147,10 @@
                         disabled>
                         🔍 Konfirmasi Scan Wajah
                     </button>
+                    <a href="{{ route('kiosk.register') }}"
+                        class="w-full sm:w-auto px-10 py-4 bg-gray-600 hover:bg-gray-700 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
+                        📝 Daftar Manual
+                    </a>
                 </div>
 
                 <form id="redirect-form" method="GET" style="display:none;"></form>
@@ -279,8 +285,24 @@
 
                 if (bestMatch.label !== 'unknown') {
                     const visitorId = bestMatch.label;
-                    document.getElementById('redirect-form').action = `/kiosk/ticket/${visitorId}`;
-                    document.getElementById('redirect-form').submit();
+                    
+                    Swal.fire({
+                        title: 'Data Ditemukan',
+                        text: 'Wajah Anda berhasil dikenali.',
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonText: 'Gunakan Data Lama',
+                        cancelButtonText: 'Verifikasi & Perbarui',
+                        confirmButtonColor: '#2563eb',
+                        cancelButtonColor: '#059669',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = `/kiosk/options/${visitorId}`;
+                        } else {
+                            window.location.href = `/kiosk/options/verify/${visitorId}`;
+                        }
+                    });
                     return;
                 }
             }
